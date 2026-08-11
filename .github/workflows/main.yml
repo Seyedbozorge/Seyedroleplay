@@ -19,14 +19,20 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Build Debug APK with Gradle
-      run: ./gradlew assembleDebug
+    - name: Build with System Gradle
+      run: |
+        sudo apt-get update && sudo apt-get install -y gradle
+        
+        PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -exec dirname {} \; | head -n 1)
+        if [ -z "$PROJECT_DIR" ]; then
+          PROJECT_DIR="."
+        fi
+        
+        cd "$PROJECT_DIR"
+        gradle assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: SeyedRoleplay-Launcher-Debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: '**/build/outputs/apk/debug/app-debug.apk'
