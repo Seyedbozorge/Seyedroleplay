@@ -19,29 +19,28 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Prepare and Build APK
+    - name: Generate Wrapper and Build APK
       run: |
         # پیدا کردن پوشه اصلی پروژه
-        TARGET_DIR="."
-        if [ -d "SeyedRoleplayLauncher" ]; then
-          TARGET_DIR="SeyedRoleplayLauncher"
+        PROJECT_DIR=$(find . -name "settings.gradle" -o -name "build.gradle" -maxdepth 3 -exec dirname {} \; | head -n 1)
+        if [ -z "$PROJECT_DIR" ]; then
+          PROJECT_DIR="."
         fi
-        cd "$TARGET_DIR"
+        echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
 
-        # نصب ابزار گریدل در سرور گیت‌هاب
-        sudo apt-get update && sudo apt-get install -y gradle || true
+        # نصب گریدل روی سرور گیت‌هاب
+        sudo apt-get update && sudo apt-get install -y gradle
 
-        # اگر فایل gradlew وجود نداشت، به صورت خودکار ایجاد می‌شود
+        # ساخت فایل gradlew در صورت عدم وجود
         if [ ! -f "gradlew" ]; then
-          gradle wrapper --gradle-version 8.5 || true
+          gradle wrapper || true
         fi
-        
+
+        # ایجاد اسکریپت جایگزین برای اطمینان از عدم وقوع خطا
         if [ ! -f "gradlew" ]; then
-          echo '#!/usr/bin/env sh' > gradlew
-          echo 'gradle "$@"' >> gradlew
+          echo '#!/usr/bin/env bash' > gradlew
+          echo 'exec gradle "$@"' >> gradlew
         fi
 
         chmod +x gradlew
