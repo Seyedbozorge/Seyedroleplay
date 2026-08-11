@@ -14,21 +14,27 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build with System Gradle
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Build APK with Gradle
       run: |
-        sudo apt-get update && sudo apt-get install -y gradle
-        
         PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -exec dirname {} \; | head -n 1)
         if [ -z "$PROJECT_DIR" ]; then
           PROJECT_DIR="."
         fi
-        
+        echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
         cd "$PROJECT_DIR"
+
+        # معرفی مسیر Android SDK به پروژه برای جلوگیری از خطای بیلد
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+        sudo apt-get update && sudo apt-get install -y gradle
         gradle assembleDebug
 
     - name: Upload APK Artifact
