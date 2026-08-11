@@ -19,20 +19,31 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Find Project and Build APK
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Prepare and Build APK
       run: |
-        # پیدا کردن خودکار پوشه اصلی پروژه که فایل‌های اندروید در آن قرار دارند
-        PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -exec dirname {} \;)
-        if [ -z "$PROJECT_DIR" ]; then
-          PROJECT_DIR="."
+        # پیدا کردن پوشه اصلی پروژه
+        TARGET_DIR="."
+        if [ -d "SeyedRoleplayLauncher" ]; then
+          TARGET_DIR="SeyedRoleplayLauncher"
         fi
-        echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
-        cd "$PROJECT_DIR"
+        cd "$TARGET_DIR"
+
+        # نصب ابزار گریدل در سرور گیت‌هاب
+        sudo apt-get update && sudo apt-get install -y gradle || true
+
+        # اگر فایل gradlew وجود نداشت، به صورت خودکار ایجاد می‌شود
+        if [ ! -f "gradlew" ]; then
+          gradle wrapper --gradle-version 8.5 || true
+        fi
         
-        # نصب گریدل و ساخت خودکار فایل‌های مدیریت بیلد (gradlew) در صورت عدم وجود
-        sudo apt-get update && sudo apt-get install -y gradle
-        gradle wrapper
-        
+        if [ ! -f "gradlew" ]; then
+          echo '#!/usr/bin/env sh' > gradlew
+          echo 'gradle "$@"' >> gradlew
+        fi
+
         chmod +x gradlew
         ./gradlew assembleDebug
 
