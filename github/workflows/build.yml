@@ -1,50 +1,19 @@
-name: Build SRP Launcher APK
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
     - name: Generate Wrapper and Build APK
       run: |
-        # پیدا کردن هوشمند پوشه پروژه
-        PROJECT_DIR=$(find . -name "settings.gradle" -o -name "build.gradle" -maxdepth 3 -exec dirname {} \; | head -n 1)
-        if [ -z "$PROJECT_DIR" ]; then
-          PROJECT_DIR="."
-        fi
-        echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
-        
-        # رفتن به داخل پوشه پروژه و انجام تمام کارها در همانجا
+        PROJECT_DIR=$(find . -maxdepth 3 \( -name settings.gradle -o -name build.gradle \) -exec dirname {} \; | head -n 1)
+        [ -z "$PROJECT_DIR" ] && PROJECT_DIR="."
+        echo "Project dir: $PROJECT_DIR"
         cd "$PROJECT_DIR"
 
-        # نصب گریدل روی سرور
-        sudo apt-get update && sudo apt-get install -y gradle
-
-        # ساخت فایل gradlew اگر وجود نداشته باشد
-        if [ ! -f "gradlew" ]; then
-          gradle wrapper
+        if [ -f "./gradlew" ]; then
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+        else
+          sudo apt-get update && sudo apt-get install -y gradle
+          if command -v gradle >/dev/null 2>&1; then
+            gradle assembleDebug
+          else
+            echo "No gradlew and could not install gradle; aborting."
+            exit 1
+          fi
         fi
-
-        # دادن دسترسی اجرا و بیلد نهایی در همان پوشه
-        chmod +x gradlew
-        ./gradlew assembleDebug
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: SeyedRoleplay-Launcher-Debug
-        path: '**/build/outputs/apk/debug/app-debug.apk'
