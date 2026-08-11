@@ -19,19 +19,25 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install System Gradle & Generate Wrapper
+    - name: Find Project and Build APK
       run: |
+        # پیدا کردن خودکار پوشه اصلی پروژه که فایل‌های اندروید در آن قرار دارند
+        PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -exec dirname {} \;)
+        if [ -z "$PROJECT_DIR" ]; then
+          PROJECT_DIR="."
+        fi
+        echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
+        
+        # نصب گریدل و ساخت خودکار فایل‌های مدیریت بیلد (gradlew) در صورت عدم وجود
         sudo apt-get update && sudo apt-get install -y gradle
         gradle wrapper
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Build Debug APK with Gradle
-      run: ./gradlew assembleDebug
+        
+        chmod +x gradlew
+        ./gradlew assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: SeyedRoleplay-Launcher-Debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: '**/build/outputs/apk/debug/app-debug.apk'
