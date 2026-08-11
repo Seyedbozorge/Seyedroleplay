@@ -21,28 +21,25 @@ jobs:
 
     - name: Generate Wrapper and Build APK
       run: |
-        # پیدا کردن پوشه اصلی پروژه
+        # پیدا کردن هوشمند پوشه پروژه
         PROJECT_DIR=$(find . -name "settings.gradle" -o -name "build.gradle" -maxdepth 3 -exec dirname {} \; | head -n 1)
         if [ -z "$PROJECT_DIR" ]; then
           PROJECT_DIR="."
         fi
         echo "پروژه در این پوشه پیدا شد: $PROJECT_DIR"
+        
+        # رفتن به داخل پوشه پروژه و انجام تمام کارها در همانجا
         cd "$PROJECT_DIR"
 
-        # نصب گریدل روی سرور گیت‌هاب
+        # نصب گریدل روی سرور
         sudo apt-get update && sudo apt-get install -y gradle
 
-        # ساخت فایل gradlew در صورت عدم وجود
+        # ساخت فایل gradlew اگر وجود نداشته باشد
         if [ ! -f "gradlew" ]; then
-          gradle wrapper || true
+          gradle wrapper
         fi
 
-        # ایجاد اسکریپت جایگزین برای اطمینان از عدم وقوع خطا
-        if [ ! -f "gradlew" ]; then
-          echo '#!/usr/bin/env bash' > gradlew
-          echo 'exec gradle "$@"' >> gradlew
-        fi
-
+        # دادن دسترسی اجرا و بیلد نهایی در همان پوشه
         chmod +x gradlew
         ./gradlew assembleDebug
 
